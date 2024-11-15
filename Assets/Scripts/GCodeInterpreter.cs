@@ -7,60 +7,105 @@ public class GCodeInterpreter : MonoBehaviour
     private List<Vector3> points = new List<Vector3>();
     private Vector3 currentPosition = Vector3.zero;
 
+    // Lista de filas de la tabla
+    public List<GCodeRow> gCodeRows = new List<GCodeRow>();
+
     void Start()
     {
-        lineRenderer.positionCount = 0; // Inicializar con 0 puntos
-        string gCode = "G00 X0 Y0\nG01 X10 Y10\nG01 X20 Y5\nG02 X25 Y10 I5 J5"; // Ejemplo de G-code
-        ParseGCode(gCode);
+        lineRenderer.positionCount = 0;
     }
 
-    // Función para parsear G-code
-    void ParseGCode(string code)
+    // MÃ©todo que se llama cuando se agrega una fila nueva
+    public void AddNewGCodeRow(int gCode, float x, float y, float r, float f)
     {
-        string[] lines = code.Split('\n');
-        foreach (string line in lines)
+        // Crear nueva fila y agregarla a la lista
+        GCodeRow newRow = new GCodeRow(gCode, x, y, r, f);
+        gCodeRows.Add(newRow);
+
+        // Procesar solo esta fila y dibujar la lÃ­nea correspondiente
+        ProcessGCode(newRow);
+    }
+
+    void ProcessGCode(GCodeRow row)
+    {
+        int gCode = row.gCode;
+        float x = row.x;
+        float y = row.y;
+        float r = row.r;
+        float f = row.f;
+
+        if (gCode == 0 || gCode == 1) // Movimiento rÃ¡pido o lineal
         {
-            string[] commands = line.Split(' ');
-            foreach (string command in commands)
-            {
-                if (command.StartsWith("G"))
-                {
-                    string gCommand = command.Substring(0, 3); // Obtener el código G
-                    float x = currentPosition.x;
-                    float y = currentPosition.y;
-
-                    foreach (string param in commands)
-                    {
-                        if (param.StartsWith("X"))
-                            x = float.Parse(param.Substring(1));
-                        if (param.StartsWith("Y"))
-                            y = float.Parse(param.Substring(1));
-                    }
-
-                    // Ejecutar el movimiento basado en el comando
-                    if (gCommand == "G00") // Movimiento rápido
-                    {
-                        MoveTo(new Vector3(x, y, 0));
-                    }
-                    else if (gCommand == "G01") // Movimiento lineal
-                    {
-                        MoveTo(new Vector3(x, y, 0));
-                    }
-                    else if (gCommand == "G02") // Movimiento en arco horario
-                    {
-                        // Necesitarás una función especial para calcular el arco
-                    }
-                }
-            }
+            MoveTo(new Vector3(x, y, 0));
+        }
+        else if (gCode == 2 || gCode == 3) // Arco horario o antihorario
+        {
+            bool clockwise = gCode == 2;
+            DrawArc(new Vector3(x, y, 0), r, clockwise);
         }
     }
 
-    // Función para mover y dibujar la línea
     void MoveTo(Vector3 newPosition)
     {
         points.Add(newPosition);
         lineRenderer.positionCount = points.Count;
         lineRenderer.SetPosition(points.Count - 1, newPosition);
         currentPosition = newPosition;
+    }
+
+    void DrawArc(Vector3 targetPosition, float radius, bool clockwise)
+    {
+        Vector3 center = CalculateArcCenter(currentPosition, targetPosition, radius, clockwise);
+
+        float startAngle = Mathf.Atan2(currentPosition.y - center.y, currentPosition.x - center.x);
+        float endAngle = Mathf.Atan2(targetPosition.y - center.y, targetPosition.x - center.x);
+
+        float angleStep = clockwise ? -1 : 1;
+        float angle = startAngle;
+
+        while (Mathf.Abs(Mathf.DeltaAngle(Mathf.Rad2Deg * angle, Mathf.Rad2Deg * endAngle)) > 0.1f)
+        {
+            angle += angleStep * Mathf.Deg2Rad;
+            Vector3 arcPoint = new Vector3(
+                center.x + radius * Mathf.Cos(angle),
+                center.y + radius * Mathf.Sin(angle),
+                0
+            );
+            MoveTo(arcPoint);
+        }
+
+        MoveTo(targetPosition);
+    }
+
+    Vector3 CalculateArcCenter(Vector3 start, Vector3 end, float radius, bool clockwise)
+    {
+        Vector3 midpoint = (start + end) / 2;
+        Vector3 dir = (end - start).normalized;
+        float dist = Vector3.Distance(start, end) / 2;
+
+        float height = Mathf.Sqrt(Mathf.Abs(radius * radius - dist * dist));
+        Vector3 perpendicular = clockwise ? new Vector3(-dir.y, dir.x) : new Vector3(dir.y, -dir.x);
+
+        return midpoint + perpendicular * height;
+    }
+}
+
+[System.Serializable]
+public class GCodeRow
+{
+    public int gCode;
+    public float x;
+    public float y;
+    public float r;
+    public float f;
+
+    // Constructor para crear una fila de GCode
+    public GCodeRow(int gCode, float x, float y, float r, float f)
+    {
+        this.gCode = gCode;
+        this.x = x;
+        this.y = y;
+        this.r = r;
+        this.f = f;
     }
 }
