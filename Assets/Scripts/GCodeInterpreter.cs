@@ -1,111 +1,191 @@
-using UnityEngine;
 using System.Collections.Generic;
+using UnityEngine;
 
+[RequireComponent(typeof(LineRenderer))]
 public class GCodeInterpreter : MonoBehaviour
 {
-    public LineRenderer lineRenderer;
-    private List<Vector3> points = new List<Vector3>();
-    private Vector3 currentPosition = Vector3.zero;
+    public LineRenderer rapidLineRenderer;  // Para movimientos G0 (rápidos)
+    private LineRenderer cutLineRenderer;  // Para movimientos G1, G2, G3
+    private List<Vector3> rapidMovePoints = new List<Vector3>();
+    private List<Vector3> cutMovePoints = new List<Vector3>();
 
-    // Lista de filas de la tabla
-    public List<GCodeRow> gCodeRows = new List<GCodeRow>();
+    private Stack<GCodeCommand> commandHistory = new Stack<GCodeCommand>();  // Pila de comandos
+    private float currentLineWidth;
 
-    void Start()
+    void Awake()
     {
-        lineRenderer.positionCount = 0;
-    }
+        cutLineRenderer = GetComponent<LineRenderer>();
+        cutLineRenderer.startWidth = 0.1f;
+        cutLineRenderer.endWidth = 0.1f;
+        cutLineRenderer.positionCount = 0;
 
-    // Método que se llama cuando se agrega una fila nueva
-    public void AddNewGCodeRow(int gCode, float x, float y, float r, float f)
-    {
-        // Crear nueva fila y agregarla a la lista
-        GCodeRow newRow = new GCodeRow(gCode, x, y, r, f);
-        gCodeRows.Add(newRow);
-
-        // Procesar solo esta fila y dibujar la línea correspondiente
-        ProcessGCode(newRow);
-    }
-
-    void ProcessGCode(GCodeRow row)
-    {
-        int gCode = row.gCode;
-        float x = row.x;
-        float y = row.y;
-        float r = row.r;
-        float f = row.f;
-
-        if (gCode == 0 || gCode == 1) // Movimiento rápido o lineal
+        if (rapidLineRenderer != null)
         {
-            MoveTo(new Vector3(x, y, 0));
-        }
-        else if (gCode == 2 || gCode == 3) // Arco horario o antihorario
-        {
-            bool clockwise = gCode == 2;
-            DrawArc(new Vector3(x, y, 0), r, clockwise);
+            rapidLineRenderer.startWidth = 0.1f;
+            rapidLineRenderer.endWidth = 0.1f;
+            rapidLineRenderer.positionCount = 0;
         }
     }
 
-    void MoveTo(Vector3 newPosition)
+    public void Initialize(float lineWidth)
     {
-        points.Add(newPosition);
-        lineRenderer.positionCount = points.Count;
-        lineRenderer.SetPosition(points.Count - 1, newPosition);
-        currentPosition = newPosition;
-    }
+        currentLineWidth = lineWidth;
+        cutMovePoints.Clear();
+        cutLineRenderer.positionCount = 0;
 
-    void DrawArc(Vector3 targetPosition, float radius, bool clockwise)
-    {
-        Vector3 center = CalculateArcCenter(currentPosition, targetPosition, radius, clockwise);
-
-        float startAngle = Mathf.Atan2(currentPosition.y - center.y, currentPosition.x - center.x);
-        float endAngle = Mathf.Atan2(targetPosition.y - center.y, targetPosition.x - center.x);
-
-        float angleStep = clockwise ? -1 : 1;
-        float angle = startAngle;
-
-        while (Mathf.Abs(Mathf.DeltaAngle(Mathf.Rad2Deg * angle, Mathf.Rad2Deg * endAngle)) > 0.1f)
+        if (rapidLineRenderer != null)
         {
-            angle += angleStep * Mathf.Deg2Rad;
-            Vector3 arcPoint = new Vector3(
-                center.x + radius * Mathf.Cos(angle),
-                center.y + radius * Mathf.Sin(angle),
-                0
-            );
-            MoveTo(arcPoint);
+            rapidMovePoints.Clear();
+            rapidLineRenderer.positionCount = 0;
         }
-
-        MoveTo(targetPosition);
     }
 
-    Vector3 CalculateArcCenter(Vector3 start, Vector3 end, float radius, bool clockwise)
+    public void AddGCodeCommand(int gCode, Vector3 point, float radius = 0)
     {
-        Vector3 midpoint = (start + end) / 2;
+        if (gCode == 0)
+        {
+            // G0: Movimiento rápido
+            rapidMovePoints.Add(point);
+            UpdateLineRenderer(rapidLineRenderer, rapidMovePoints);
+            commandHistory.Push(new GCodeCommand(gCode, rapidMovePoints, radius)); // Guardar comando
+        }
+        else if (gCode == 1)
+        {
+            // G1: Movimiento lineal
+            cutMovePoints.Add(point);
+            UpdateLineRenderer(cutLineRenderer, cutMovePoints);
+            commandHistory.Push(new GCodeCommand(gCode, cutMovePoints, radius)); // Guardar comando
+        }
+        else if (gCode == 2 || gCode == 3)
+        {
+            // G2/G3: Movimiento en arco
+            AddArc(gCode, cutMovePoints[cutMovePoints.Count - 1], point, radius);
+            UpdateLineRenderer(cutLineRenderer, cutMovePoints);
+            commandHistory.Push(new GCodeCommand(gCode, cutMovePoints, radius)); // Guardar comando
+        }
+    }
+
+    private void AddArc(int gCode, Vector3 start, Vector3 end, float radius)
+    {
+        // Determinar el centro del arco
+        Vector3 midPoint = (start + end) / 2;
         Vector3 dir = (end - start).normalized;
-        float dist = Vector3.Distance(start, end) / 2;
+        
+        Vector3 normal = Vector3.Cross(dir, Vector3.forward).normalized;
+        if (gCode == 3) // Anti-horario
+            normal = -normal;
 
-        float height = Mathf.Sqrt(Mathf.Abs(radius * radius - dist * dist));
-        Vector3 perpendicular = clockwise ? new Vector3(-dir.y, dir.x) : new Vector3(dir.y, -dir.x);
+        float halfChord = Vector3.Distance(start, midPoint);
+        float height = Mathf.Sqrt(Mathf.Abs(radius * radius - halfChord * halfChord));
 
-        return midpoint + perpendicular * height;
+        Vector3 center = midPoint + normal * height;
+
+        // Calcular ángulo de inicio y fin
+        Vector3 startToCenter = start - center;
+        Vector3 endToCenter = end - center;
+
+        float startAngle = Mathf.Atan2(startToCenter.y, startToCenter.x);
+        float endAngle = Mathf.Atan2(endToCenter.y, endToCenter.x);
+
+        if (gCode == 2 && startAngle < endAngle) startAngle += 2 * Mathf.PI;
+        if (gCode == 3 && startAngle > endAngle) endAngle += 2 * Mathf.PI;
+
+        // Generar puntos
+        int numSegments = 20;
+        for (int i = 0; i <= numSegments; i++)
+        {
+            float t = i / (float)numSegments;
+            float angle = Mathf.Lerp(startAngle, endAngle, t);
+
+            float x = center.x + radius * Mathf.Cos(angle);
+            float y = center.y + radius * Mathf.Sin(angle);
+
+            cutMovePoints.Add(new Vector3(x, y, start.z));  // Mantener Z constante
+        }
     }
-}
 
-[System.Serializable]
-public class GCodeRow
-{
-    public int gCode;
-    public float x;
-    public float y;
-    public float r;
-    public float f;
-
-    // Constructor para crear una fila de GCode
-    public GCodeRow(int gCode, float x, float y, float r, float f)
+    private void UpdateLineRenderer(LineRenderer lineRenderer, List<Vector3> points)
     {
-        this.gCode = gCode;
-        this.x = x;
-        this.y = y;
-        this.r = r;
-        this.f = f;
+        if (lineRenderer != null)
+        {
+            lineRenderer.positionCount = points.Count;
+            for (int i = 0; i < points.Count; i++)
+            {
+                lineRenderer.SetPosition(i, points[i]);
+            }
+        }
+    }
+
+    public void UndoLastCommand()
+    {
+        if (commandHistory.Count > 0)
+        {
+            GCodeCommand lastCommand = commandHistory.Pop();
+            
+            // Según el tipo de GCode, eliminar los puntos asociados a ese comando
+            if (lastCommand.gCode == 0)
+            {
+                // Eliminar solo el último punto del movimiento rápido
+                if (rapidMovePoints.Count > 0)
+                {
+                    rapidMovePoints.RemoveAt(rapidMovePoints.Count - 1);
+                    UpdateLineRenderer(rapidLineRenderer, rapidMovePoints);  // Actualizar solo el LineRenderer de G0
+                }
+            }
+            else if (lastCommand.gCode == 1)
+            {
+                // Eliminar solo el último punto del movimiento lineal
+                if (cutMovePoints.Count > 0)
+                {
+                    cutMovePoints.RemoveAt(cutMovePoints.Count - 1);
+                    UpdateLineRenderer(cutLineRenderer, cutMovePoints);  // Actualizar solo el LineRenderer de G1
+                }
+            }
+            else if (lastCommand.gCode == 2 || lastCommand.gCode == 3)
+            {
+                // Eliminar solo los puntos del arco
+                int numPointsToRemove = lastCommand.points.Count;
+                for (int i = 0; i < numPointsToRemove; i++)
+                {
+                    cutMovePoints.RemoveAt(cutMovePoints.Count - 1);
+                }
+                UpdateLineRenderer(cutLineRenderer, cutMovePoints);  // Actualizar solo el LineRenderer de G2/G3
+            }
+        }
+    }
+
+    // Función para habilitar/deshabilitar la visibilidad de los movimientos rápidos
+    public void ToggleRapidMoves(bool isVisible)
+    {
+        if (rapidLineRenderer != null)
+        {
+            rapidLineRenderer.enabled = isVisible;
+        }
+    }
+
+    // Limpiar todo
+    public void ClearAll()
+    {
+        rapidMovePoints.Clear();
+        cutMovePoints.Clear();
+
+        rapidLineRenderer.positionCount = 0;
+        cutLineRenderer.positionCount = 0;
+        commandHistory.Clear();  // Limpiar la pila de comandos
+    }
+
+    // Clase interna para almacenar los comandos GCode
+    private class GCodeCommand
+    {
+        public int gCode;
+        public List<Vector3> points;
+        public float radius;
+
+        public GCodeCommand(int gCode, List<Vector3> points, float radius)
+        {
+            this.gCode = gCode;
+            this.points = new List<Vector3>(points);
+            this.radius = radius;
+        }
     }
 }
