@@ -155,11 +155,11 @@ public class GCodeInterpreter : MonoBehaviour
     }
 
     // Función para habilitar/deshabilitar la visibilidad de los movimientos rápidos
-    public void ToggleRapidMoves(bool isVisible)
+    public void ToggleRapidMoves()
     {
         if (rapidLineRenderer != null)
         {
-            rapidLineRenderer.enabled = isVisible;
+            rapidLineRenderer.enabled = !rapidLineRenderer.enabled;
         }
     }
 
