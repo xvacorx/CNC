@@ -8,13 +8,13 @@ public class GCodeInputManager : MonoBehaviour
     public TMP_InputField xInput;
     public TMP_InputField yInput;
     public TMP_InputField zInput;
-    public TMP_InputField rInput;  // Campo de radio
+    public TMP_InputField rInput;
     public TMP_InputField fInput;
-    public TMP_InputField lineWidthInput; // Campo para el ancho de línea
+    public TMP_InputField lineWidthInput;
     public GameObject rowPrefab;
     public Transform content;
 
-    public GCodeInterpreter trajectoryMesh; // Referencia al sistema de malla dinámica
+    public GCodeInterpreter trajectoryMesh;
 
     private TMP_InputField[] inputFields;
     private int currentFieldIndex = 0;
@@ -24,10 +24,9 @@ public class GCodeInputManager : MonoBehaviour
         inputFields = new TMP_InputField[] { gInput, xInput, yInput, zInput, rInput, fInput };
         inputFields[0].Select();
         
-        // Inicializar la malla con el valor de ancho
         if (float.TryParse(lineWidthInput.text, out float initialWidth))
         {
-            trajectoryMesh.Initialize(initialWidth);  // Establecemos el ancho al iniciar
+            trajectoryMesh.Initialize(initialWidth);
         }
     }
 
