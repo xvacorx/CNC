@@ -11,7 +11,10 @@ public class CameraAdjuster : MonoBehaviour
     {
         AdjustCameraToFitDrawing();
     }
-
+    public void ToggleView()
+    {
+        targetCamera.orthographic = !targetCamera.orthographic;
+    }
     public void AdjustCameraToFitDrawing()
     {
 
