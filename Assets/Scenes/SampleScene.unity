@@ -313,7 +313,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 330585546}
-  - component: {fileID: 330585548}
+  - component: {fileID: 330585549}
   - component: {fileID: 330585545}
   - component: {fileID: 330585544}
   - component: {fileID: 330585547}
@@ -442,7 +442,7 @@ MonoBehaviour:
     m_MipBias: 0
     m_VarianceClampScale: 0.9
     m_ContrastAdaptiveSharpening: 0
---- !u!114 &330585548
+--- !u!114 &330585549
 MonoBehaviour:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
@@ -451,12 +451,19 @@ MonoBehaviour:
   m_GameObject: {fileID: 330585543}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: c3776c557542c794ba022f45f95c518e, type: 3}
+  m_Script: {fileID: 11500000, guid: 7c1295015407b604698c1795fe681eef, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  target: {fileID: 274749152}
+  rotationSpeed: 100
+  minYAngle: 10
+  maxYAngle: 80
+  zoomSpeed: 10
+  minZoomDistance: 2
+  maxZoomDistance: 100
   targetCamera: {fileID: 330585545}
   drawingBounds: {fileID: 274749152}
-  padding: 1.5
+  padding: 1
 --- !u!1 &410087039
 GameObject:
   m_ObjectHideFlags: 0
@@ -912,7 +919,27 @@ PrefabInstance:
     - target: {fileID: 953030237632743552, guid: c4a3a146da5363747bb9d868e7ded8a0, type: 3}
       propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
       value: 
-      objectReference: {fileID: 330585548}
+      objectReference: {fileID: 330585549}
+    - target: {fileID: 953030237632743552, guid: c4a3a146da5363747bb9d868e7ded8a0, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: AdjustCameraToFitDrawing
+      objectReference: {fileID: 0}
+    - target: {fileID: 953030237632743552, guid: c4a3a146da5363747bb9d868e7ded8a0, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: OrbitalCameraController, Assembly-CSharp
+      objectReference: {fileID: 0}
+    - target: {fileID: 1288158425967630386, guid: c4a3a146da5363747bb9d868e7ded8a0, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_Target
+      value: 
+      objectReference: {fileID: 330585549}
+    - target: {fileID: 1288158425967630386, guid: c4a3a146da5363747bb9d868e7ded8a0, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_MethodName
+      value: ToggleView
+      objectReference: {fileID: 0}
+    - target: {fileID: 1288158425967630386, guid: c4a3a146da5363747bb9d868e7ded8a0, type: 3}
+      propertyPath: m_OnClick.m_PersistentCalls.m_Calls.Array.data[0].m_TargetAssemblyTypeName
+      value: OrbitalCameraController, Assembly-CSharp
+      objectReference: {fileID: 0}
     - target: {fileID: 2302278122566350384, guid: c4a3a146da5363747bb9d868e7ded8a0, type: 3}
       propertyPath: m_AnchorMax.y
       value: 0
