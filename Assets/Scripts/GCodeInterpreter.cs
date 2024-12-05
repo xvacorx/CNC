@@ -7,13 +7,19 @@ public class GCodeInterpreter : MonoBehaviour
     public LineRenderer rapidLineRenderer;
     private LineRenderer cutLineRenderer;
 
-    private List<Vector3> rapidMovePoints = new List<Vector3>();
-    private List<Vector3> cutMovePoints = new List<Vector3>();
+    private List<MoveSegment> rapidMoves = new List<MoveSegment>();
+    private List<MoveSegment> cutMoves = new List<MoveSegment>();
 
     private Material rapidMaterial;
     private Material cutMaterial;
 
-    private bool isLastMoveCut = true; 
+    private bool isLastMoveCut = true;
+
+    private class MoveSegment
+    {
+        public int GCode;
+        public List<Vector3> Points = new List<Vector3>();
+    }
 
     void Awake()
     {
@@ -36,8 +42,8 @@ public class GCodeInterpreter : MonoBehaviour
 
     public void Initialize(float lineWidth)
     {
-        rapidMovePoints.Clear();
-        cutMovePoints.Clear();
+        rapidMoves.Clear();
+        cutMoves.Clear();
 
         if (rapidLineRenderer != null)
         {
@@ -54,51 +60,46 @@ public class GCodeInterpreter : MonoBehaviour
     public void AddGCodeCommand(int gCode, Vector3 point, float radius = 0)
     {
         point.z = -point.z;
+        MoveSegment segment = new MoveSegment { GCode = gCode };
 
         if (gCode == 0)
         {
-            // G0: Movimiento rápido
-            if (isLastMoveCut)
+            if (isLastMoveCut && cutMoves.Count > 0)
             {
-                rapidMovePoints.Clear();
-                rapidMovePoints.Add(cutMovePoints[^1]); // Continuidad desde el último punto de G1
+                segment.Points.Add(cutMoves[^1].Points[^1]);
             }
-            rapidMovePoints.Add(point);
-            UpdateLineRenderer(rapidLineRenderer, rapidMovePoints);
+            segment.Points.Add(point);
+            rapidMoves.Add(segment);
+            UpdateLineRenderer(rapidLineRenderer, GetAllPoints(rapidMoves));
             isLastMoveCut = false;
         }
         else if (gCode == 1 || gCode == 2 || gCode == 3)
         {
-            // G1/G2/G3: Movimientos de corte
-            if (!isLastMoveCut)
+            if (!isLastMoveCut && rapidMoves.Count > 0)
             {
-                cutMovePoints.Clear();
-                cutMovePoints.Add(rapidMovePoints[^1]); // Continuidad desde el último punto de G0
+                segment.Points.Add(rapidMoves[^1].Points[^1]);
             }
-
             if (gCode == 1)
             {
-                // Movimiento lineal
-                cutMovePoints.Add(point);
+                segment.Points.Add(point);
             }
             else
             {
-                // Movimiento en arco (G2/G3)
-                AddArc(gCode, cutMovePoints[^1], point, radius);
+                AddArc(gCode, segment.Points[^1], point, radius, segment.Points);
             }
-
-            UpdateLineRenderer(cutLineRenderer, cutMovePoints);
+            cutMoves.Add(segment);
+            UpdateLineRenderer(cutLineRenderer, GetAllPoints(cutMoves));
             isLastMoveCut = true;
         }
     }
 
-    private void AddArc(int gCode, Vector3 start, Vector3 end, float radius)
+    private void AddArc(int gCode, Vector3 start, Vector3 end, float radius, List<Vector3> points)
     {
         Vector3 midPoint = (start + end) / 2;
         Vector3 dir = (end - start).normalized;
 
         Vector3 normal = Vector3.Cross(dir, Vector3.forward).normalized;
-        if (gCode == 3) // Anti-horario
+        if (gCode == 3)
             normal = -normal;
 
         float halfChord = Vector3.Distance(start, midPoint);
@@ -124,7 +125,7 @@ public class GCodeInterpreter : MonoBehaviour
             float x = center.x + radius * Mathf.Cos(angle);
             float y = center.y + radius * Mathf.Sin(angle);
 
-            cutMovePoints.Add(new Vector3(x, y, start.z));
+            points.Add(new Vector3(x, y, start.z));
         }
     }
 
@@ -140,42 +141,35 @@ public class GCodeInterpreter : MonoBehaviour
         }
     }
 
+    private List<Vector3> GetAllPoints(List<MoveSegment> segments)
+    {
+        List<Vector3> points = new List<Vector3>();
+        foreach (var segment in segments)
+        {
+            points.AddRange(segment.Points);
+        }
+        return points;
+    }
+
     public void UndoLastMovement()
     {
-        if (isLastMoveCut)
+        if (isLastMoveCut && cutMoves.Count > 0)
         {
-            // Eliminar el último punto de G1/G2/G3
-            if (cutMovePoints.Count > 1)
-            {
-                cutMovePoints.RemoveAt(cutMovePoints.Count - 1);
-                UpdateLineRenderer(cutLineRenderer, cutMovePoints);
-            }
+            cutMoves.RemoveAt(cutMoves.Count - 1);
+            UpdateLineRenderer(cutLineRenderer, GetAllPoints(cutMoves));
         }
-        else
+        else if (!isLastMoveCut && rapidMoves.Count > 0)
         {
-            // Eliminar el último punto de G0
-            if (rapidMovePoints.Count > 1)
-            {
-                rapidMovePoints.RemoveAt(rapidMovePoints.Count - 1);
-                UpdateLineRenderer(rapidLineRenderer, rapidMovePoints);
-            }
+            rapidMoves.RemoveAt(rapidMoves.Count - 1);
+            UpdateLineRenderer(rapidLineRenderer, GetAllPoints(rapidMoves));
         }
     }
 
-    public void ToggleRapidMoves()
+    public void ToggleLineVisibility()
     {
         if (rapidLineRenderer != null)
-        {
             rapidLineRenderer.enabled = !rapidLineRenderer.enabled;
-        }
-    }
 
-    public void ClearAll()
-    {
-        rapidMovePoints.Clear();
-        cutMovePoints.Clear();
-
-        if (rapidLineRenderer != null) rapidLineRenderer.positionCount = 0;
-        cutLineRenderer.positionCount = 0;
+        cutLineRenderer.enabled = !cutLineRenderer.enabled;
     }
 }

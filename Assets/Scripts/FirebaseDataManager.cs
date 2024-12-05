@@ -28,14 +28,21 @@ public class FirebaseDataManager : MonoBehaviour
 
     public void SaveDataToFirebase()
     {
+        float rValue = 0;
+        float fValue = 0;
         if (!float.TryParse(xInput.text, out float xValue) ||
             !float.TryParse(yInput.text, out float yValue) ||
             !float.TryParse(zInput.text, out float zValue) ||
-            !float.TryParse(rInput.text, out float rValue) ||
-            !float.TryParse(fInput.text, out float fValue) ||
-            string.IsNullOrEmpty(gInput.text) || !int.TryParse(gInput.text, out int gValue))
+            (!string.IsNullOrEmpty(rInput.text) && !float.TryParse(rInput.text, out rValue)) ||
+            (!string.IsNullOrEmpty(fInput.text) && !float.TryParse(fInput.text, out fValue)))
         {
-            Debug.LogError("Uno o m�s valores no son v�lidos.");
+            Debug.LogError("Uno o más valores no son válidos.");
+            return;
+        }
+        string gValue = gInput.text;
+        if (string.IsNullOrEmpty(gValue) || !int.TryParse(gValue, out int gCode))
+        {
+            Debug.LogError("El comando G es obligatorio y debe ser un número válido.");
             return;
         }
 

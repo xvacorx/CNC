@@ -86,6 +86,9 @@ public class OrbitalCameraController : MonoBehaviour
         Bounds bounds = CalculateBounds(drawingBounds);
         Vector3 center = bounds.center;
 
+        // Ajustar el transform del target al centro del dibujo
+        target.position = center;
+
         if (targetCamera.orthographic)
         {
             targetCamera.orthographicSize = Mathf.Max(bounds.size.x, bounds.size.y) * padding * 0.5f;
@@ -101,6 +104,7 @@ public class OrbitalCameraController : MonoBehaviour
         currentYaw = 0f;
         HandleOrbit(); // Actualizar posición
     }
+
 
     private Bounds CalculateBounds(Transform root)
     {

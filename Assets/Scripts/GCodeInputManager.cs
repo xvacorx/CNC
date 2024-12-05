@@ -21,12 +21,11 @@ public class GCodeInputManager : MonoBehaviour
 
     public FirebaseDataManager firebaseDataManager;
 
-
     void Start()
     {
         inputFields = new TMP_InputField[] { gInput, xInput, yInput, zInput, rInput, fInput };
         inputFields[0].Select();
-        
+
         if (float.TryParse(lineWidthInput.text, out float initialWidth))
         {
             trajectoryMesh.Initialize(initialWidth);
@@ -88,7 +87,6 @@ public class GCodeInputManager : MonoBehaviour
         rowFields[4].text = (gCode == 2 || gCode == 3) && !string.IsNullOrEmpty(rInput.text) ? $"R{rValue:F2}" : "";
         rowFields[5].text = !string.IsNullOrEmpty(fInput.text) ? $"F{fValue:F2}" : "";
 
-        // Agregar el punto o el arco según el tipo de movimiento
         trajectoryMesh.AddGCodeCommand(gCode, new Vector3(xValue, yValue, zValue), rValue);
 
         ClearInputs();
@@ -104,14 +102,13 @@ public class GCodeInputManager : MonoBehaviour
         inputFields[0].Select();
     }
 
-    // Función para eliminar la última fila de la tabla
     public void RemoveLastRow()
     {
-        // Verificar si hay filas en el contenido
         if (content.childCount > 0)
         {
             Transform lastRow = content.GetChild(content.childCount - 1);
-            Destroy(lastRow.gameObject);  // Eliminar la última fila
+            Destroy(lastRow.gameObject);
+            trajectoryMesh.UndoLastMovement();
         }
         else
         {
