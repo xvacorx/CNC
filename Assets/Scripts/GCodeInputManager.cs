@@ -19,6 +19,9 @@ public class GCodeInputManager : MonoBehaviour
     private TMP_InputField[] inputFields;
     private int currentFieldIndex = 0;
 
+    public FirebaseDataManager firebaseDataManager;
+
+
     void Start()
     {
         inputFields = new TMP_InputField[] { gInput, xInput, yInput, zInput, rInput, fInput };
@@ -50,6 +53,7 @@ public class GCodeInputManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
         {
             AddGCodeRow();
+            firebaseDataManager.SaveDataToFirebase();
         }
     }
 
