@@ -467,11 +467,11 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   target: {fileID: 274749152}
   rotationSpeed: 100
-  minYAngle: 10
-  maxYAngle: 80
+  minYAngle: -60
+  maxYAngle: 90
   zoomSpeed: 10
   minZoomDistance: 2
-  maxZoomDistance: 100
+  maxZoomDistance: 250
   targetCamera: {fileID: 330585545}
   drawingBounds: {fileID: 274749152}
   padding: 1
@@ -1702,7 +1702,6 @@ PrefabInstance:
 SceneRoots:
   m_ObjectHideFlags: 0
   m_Roots:
-  - {fileID: 330585546}
   - {fileID: 410087041}
   - {fileID: 832575519}
   - {fileID: 274749152}
@@ -1710,3 +1709,4 @@ SceneRoots:
   - {fileID: 422005391}
   - {fileID: 6800136812639727640}
   - {fileID: 418727240}
+  - {fileID: 330585546}

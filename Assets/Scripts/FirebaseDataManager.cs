@@ -39,6 +39,7 @@ public class FirebaseDataManager : MonoBehaviour
             Debug.LogError("Uno o más valores no son válidos.");
             return;
         }
+
         string gValue = gInput.text;
         if (string.IsNullOrEmpty(gValue) || !int.TryParse(gValue, out int gCode))
         {

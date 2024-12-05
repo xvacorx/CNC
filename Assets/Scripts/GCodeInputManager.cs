@@ -52,7 +52,6 @@ public class GCodeInputManager : MonoBehaviour
         if (Input.GetKeyDown(KeyCode.Return) || Input.GetKeyDown(KeyCode.KeypadEnter))
         {
             AddGCodeRow();
-            firebaseDataManager.SaveDataToFirebase();
         }
     }
 
@@ -88,6 +87,8 @@ public class GCodeInputManager : MonoBehaviour
         rowFields[5].text = !string.IsNullOrEmpty(fInput.text) ? $"F{fValue:F2}" : "";
 
         trajectoryMesh.AddGCodeCommand(gCode, new Vector3(xValue, yValue, zValue), rValue);
+
+        firebaseDataManager.SaveDataToFirebase();
 
         ClearInputs();
     }
