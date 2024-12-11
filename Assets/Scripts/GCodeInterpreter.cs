@@ -155,15 +155,22 @@ public class GCodeInterpreter : MonoBehaviour
     {
         if (isLastMoveCut && cutMoves.Count > 0)
         {
+            // Eliminar el último segmento de corte
             cutMoves.RemoveAt(cutMoves.Count - 1);
+
+            // Actualizar el LineRenderer con las líneas restantes
             UpdateLineRenderer(cutLineRenderer, GetAllPoints(cutMoves));
         }
         else if (!isLastMoveCut && rapidMoves.Count > 0)
         {
+            // Eliminar el último segmento de movimiento rápido
             rapidMoves.RemoveAt(rapidMoves.Count - 1);
+
+            // Actualizar el LineRenderer con las líneas restantes
             UpdateLineRenderer(rapidLineRenderer, GetAllPoints(rapidMoves));
         }
     }
+
 
     public void ToggleLineVisibility()
     {

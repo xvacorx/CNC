@@ -88,8 +88,6 @@ public class GCodeInputManager : MonoBehaviour
 
         trajectoryMesh.AddGCodeCommand(gCode, new Vector3(xValue, yValue, zValue), rValue);
 
-        firebaseDataManager.SaveDataToFirebase();
-
         ClearInputs();
     }
 
