@@ -196,7 +196,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8c5b247124956514fa3db5d002ae780b, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  rapidLineRenderer: {fileID: 1264165381}
+  drawingObject: {fileID: 274749149}
 --- !u!120 &274749154
 LineRenderer:
   serializedVersion: 2
@@ -646,6 +646,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tableParent: {fileID: 6800136812639727641}
+  inputs: {fileID: 0}
 --- !u!1 &422005388
 GameObject:
   m_ObjectHideFlags: 0
@@ -1080,6 +1081,10 @@ PrefabInstance:
       propertyPath: m_AnchoredPosition.y
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: 4582861810700530768, guid: c4a3a146da5363747bb9d868e7ded8a0, type: 3}
+      propertyPath: codeCollector
+      value: 
+      objectReference: {fileID: 418727241}
     - target: {fileID: 4582861810700530768, guid: c4a3a146da5363747bb9d868e7ded8a0, type: 3}
       propertyPath: trajectoryMesh
       value: 

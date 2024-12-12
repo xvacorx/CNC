@@ -4,8 +4,12 @@ using UnityEngine;
 public class GCodeCollector : MonoBehaviour
 {
     public Transform tableParent;
+    public GCodeInputManager inputs;
 
-    public string CollectGCode()
+    /// <summary>
+    /// Devuelve la lista de comandos GCode procesados.
+    /// </summary>
+    public List<string> CollectGCodeList()
     {
         List<string> gCodeLines = new List<string>();
 
@@ -14,13 +18,20 @@ public class GCodeCollector : MonoBehaviour
             if (row.childCount == 6)
             {
                 string g = row.GetChild(0).GetComponent<TMPro.TextMeshProUGUI>().text;
-                string x = RoundToInteger(row.GetChild(1).GetComponent<TMPro.TextMeshProUGUI>().text);
-                string y = RoundToInteger(row.GetChild(2).GetComponent<TMPro.TextMeshProUGUI>().text);
-                string z = RoundToInteger(row.GetChild(3).GetComponent<TMPro.TextMeshProUGUI>().text);
-                string r = RoundToInteger(row.GetChild(4).GetComponent<TMPro.TextMeshProUGUI>().text);
-                string f = RoundToInteger(row.GetChild(5).GetComponent<TMPro.TextMeshProUGUI>().text);
+                string x = row.GetChild(1).GetComponent<TMPro.TextMeshProUGUI>().text;
+                string y = row.GetChild(2).GetComponent<TMPro.TextMeshProUGUI>().text;
+                string z = row.GetChild(3).GetComponent<TMPro.TextMeshProUGUI>().text;
+                string r = row.GetChild(4).GetComponent<TMPro.TextMeshProUGUI>().text;
+                string f = row.GetChild(5).GetComponent<TMPro.TextMeshProUGUI>().text;
 
-                string gCodeLine = $"{g} X{x} Y{y} Z{z} R{r} F{f}";
+                string gCodeLine = $"{g}";
+
+                if (!string.IsNullOrEmpty(x)) gCodeLine += $" X{x}";
+                if (!string.IsNullOrEmpty(y)) gCodeLine += $" Y{y}";
+                if (!string.IsNullOrEmpty(z)) gCodeLine += $" Z{z}";
+                if (!string.IsNullOrEmpty(r)) gCodeLine += $" R{r}";
+                if (!string.IsNullOrEmpty(f)) gCodeLine += $" F{f}";
+
                 gCodeLines.Add(gCodeLine);
             }
             else
@@ -29,22 +40,15 @@ public class GCodeCollector : MonoBehaviour
             }
         }
 
-        return string.Join("\\n", gCodeLines);
+        return gCodeLines; // Devuelve la lista de GCode procesada
     }
 
-    private string RoundToInteger(string value)
+    /// <summary>
+    /// Envía el GCode al intérprete para su carga.
+    /// </summary>
+    public void SendGCodeToInterpreter(GCodeInterpreter interpreter)
     {
-        if (int.TryParse(value, out int numericValue))
-        {
-            return numericValue.ToString();
-        }
-
-        return value;
-    }
-
-    public void PrintGCode()
-    {
-        string gCodeText = CollectGCode();
-        Debug.Log(gCodeText);
+        List<string> gCodeLines = CollectGCodeList(); // Genera la lista de GCode
+        interpreter.LoadGCodeCommands(gCodeLines); // Llama al método LoadGCodeCommands del intérprete
     }
 }

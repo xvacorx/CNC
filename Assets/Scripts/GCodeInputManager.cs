@@ -20,16 +20,12 @@ public class GCodeInputManager : MonoBehaviour
     private int currentFieldIndex = 0;
 
     public FirebaseDataManager firebaseDataManager;
+    public GCodeCollector codeCollector;
 
     void Start()
     {
         inputFields = new TMP_InputField[] { gInput, xInput, yInput, zInput, rInput, fInput };
         inputFields[0].Select();
-
-        if (float.TryParse(lineWidthInput.text, out float initialWidth))
-        {
-            trajectoryMesh.Initialize(initialWidth);
-        }
     }
 
     void Update()
@@ -57,22 +53,9 @@ public class GCodeInputManager : MonoBehaviour
 
     public void AddGCodeRow()
     {
-        float rValue = 0;
-        float fValue = 0;
-        if (!float.TryParse(xInput.text, out float xValue) ||
-            !float.TryParse(yInput.text, out float yValue) ||
-            !float.TryParse(zInput.text, out float zValue) ||
-            (!string.IsNullOrEmpty(rInput.text) && !float.TryParse(rInput.text, out rValue)) ||
-            (!string.IsNullOrEmpty(fInput.text) && !float.TryParse(fInput.text, out fValue)))
+        if (!ValidateInputs(out int gCode, out float xValue, out float yValue, out float zValue, out float rValue, out float fValue))
         {
-            Debug.LogError("Uno o más valores no son válidos.");
-            return;
-        }
-
-        string gValue = gInput.text;
-        if (string.IsNullOrEmpty(gValue) || !int.TryParse(gValue, out int gCode))
-        {
-            Debug.LogError("El comando G es obligatorio y debe ser un número válido.");
+            Debug.LogError("Uno o más valores no son válidos. Revisa los campos de entrada.");
             return;
         }
 
@@ -80,15 +63,52 @@ public class GCodeInputManager : MonoBehaviour
         TMP_Text[] rowFields = newRow.GetComponentsInChildren<TMP_Text>();
 
         rowFields[0].text = $"G{gCode}";
-        rowFields[1].text = $"X{xValue:F2}";
-        rowFields[2].text = $"Y{yValue:F2}";
-        rowFields[3].text = $"Z{zValue:F2}";
-        rowFields[4].text = (gCode == 2 || gCode == 3) && !string.IsNullOrEmpty(rInput.text) ? $"R{rValue:F2}" : "";
-        rowFields[5].text = !string.IsNullOrEmpty(fInput.text) ? $"F{fValue:F2}" : "";
+        rowFields[1].text = $"{xValue:F0}";
+        rowFields[2].text = $"{yValue:F0}";
+        rowFields[3].text = $"{zValue:F0}";
+        rowFields[4].text = (gCode == 2 || gCode == 3) ? $"{rValue:F2}" : "";
+        rowFields[5].text = fValue > 0 ? $"{fValue:F0}" : "";
 
-        trajectoryMesh.AddGCodeCommand(gCode, new Vector3(xValue, yValue, zValue), rValue);
-
+        codeCollector.SendGCodeToInterpreter(trajectoryMesh);
         ClearInputs();
+    }
+
+    private bool ValidateInputs(out int gCode, out float xValue, out float yValue, out float zValue, out float rValue, out float fValue)
+    {
+        gCode = 0;
+        xValue = yValue = zValue = rValue = fValue = 0;
+
+        // Validar G
+        if (string.IsNullOrEmpty(gInput.text) || !int.TryParse(gInput.text, out gCode))
+        {
+            Debug.LogError("El comando G es obligatorio y debe ser un número válido.");
+            return false;
+        }
+
+        // Validar X, Y, Z
+        if (!float.TryParse(xInput.text, out xValue) ||
+            !float.TryParse(yInput.text, out yValue) ||
+            !float.TryParse(zInput.text, out zValue))
+        {
+            Debug.LogError("Los valores de X, Y y Z son obligatorios y deben ser números válidos.");
+            return false;
+        }
+
+        // Validar R (opcional)
+        if (!string.IsNullOrEmpty(rInput.text) && !float.TryParse(rInput.text, out rValue))
+        {
+            Debug.LogError("El valor de R debe ser un número válido si está presente.");
+            return false;
+        }
+
+        // Validar F (opcional)
+        if (!string.IsNullOrEmpty(fInput.text) && !float.TryParse(fInput.text, out fValue))
+        {
+            Debug.LogError("El valor de F debe ser un número válido si está presente.");
+            return false;
+        }
+
+        return true;
     }
 
     private void ClearInputs()
@@ -107,7 +127,7 @@ public class GCodeInputManager : MonoBehaviour
         {
             Transform lastRow = content.GetChild(content.childCount - 1);
             Destroy(lastRow.gameObject);
-            trajectoryMesh.UndoLastMovement();
+            codeCollector.SendGCodeToInterpreter(trajectoryMesh);
         }
         else
         {
