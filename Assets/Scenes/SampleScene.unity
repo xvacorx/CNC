@@ -646,7 +646,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   tableParent: {fileID: 6800136812639727641}
-  inputs: {fileID: 0}
+  inputs: {fileID: 1005495014}
 --- !u!1 &422005388
 GameObject:
   m_ObjectHideFlags: 0
@@ -775,6 +775,17 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1005495014 stripped
+MonoBehaviour:
+  m_CorrespondingSourceObject: {fileID: 4582861810700530768, guid: c4a3a146da5363747bb9d868e7ded8a0, type: 3}
+  m_PrefabInstance: {fileID: 6800136812639727640}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7a6f8c5d4735eeb4f93007100141ab9e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
 --- !u!1 &1264165379
 GameObject:
   m_ObjectHideFlags: 0

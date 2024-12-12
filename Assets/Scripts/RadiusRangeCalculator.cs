@@ -1,5 +1,6 @@
 using UnityEngine;
 using TMPro;
+using System.Xml.Schema;
 
 public class RadiusRangeCalculator : MonoBehaviour
 {
@@ -7,7 +8,11 @@ public class RadiusRangeCalculator : MonoBehaviour
     public TMP_InputField xInput;
     public TMP_InputField yInput;
     public TMP_Text rRangeText;
-
+    private Vector2 lastPoint;
+    private void Start()
+    {
+        lastPoint = Vector2.zero;
+    }
     void Update()
     {
         UpdateRadiusRange();
@@ -15,8 +20,8 @@ public class RadiusRangeCalculator : MonoBehaviour
 
     private void UpdateRadiusRange()
     {
-        if (!int.TryParse(gInput.text, out int gValue) || 
-            !float.TryParse(xInput.text, out float xValue) || 
+        if (!int.TryParse(gInput.text, out int gValue) ||
+            !float.TryParse(xInput.text, out float xValue) ||
             !float.TryParse(yInput.text, out float yValue))
         {
             rRangeText.text = "Rango no disponible";
@@ -35,4 +40,5 @@ public class RadiusRangeCalculator : MonoBehaviour
             rRangeText.text = "R no requerido para este G";
         }
     }
+    public void UpdateLastPoint(float xvalue, float yvalue) { }
 }
