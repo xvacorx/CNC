@@ -10,15 +10,14 @@ public class GCodeInputManager : MonoBehaviour
     public TMP_InputField zInput;
     public TMP_InputField rInput;
     public TMP_InputField fInput;
-    public TMP_InputField lineWidthInput;
     public GameObject rowPrefab;
     public Transform content;
-
+    public TMP_Text warningText;
     public GCodeInterpreter trajectoryMesh;
 
     private TMP_InputField[] inputFields;
     private int currentFieldIndex = 0;
-
+    public RadiusRangeCalculator rangeCalculator;
     public FirebaseDataManager firebaseDataManager;
     public GCodeCollector codeCollector;
 
@@ -56,6 +55,7 @@ public class GCodeInputManager : MonoBehaviour
         if (!ValidateInputs(out int gCode, out float xValue, out float yValue, out float zValue, out float rValue, out float fValue))
         {
             Debug.LogError("Uno o más valores no son válidos. Revisa los campos de entrada.");
+            warningText.text = ("Uno o más valores no son válidos. Revisa los campos de entrada.");
             return;
         }
 
@@ -63,11 +63,11 @@ public class GCodeInputManager : MonoBehaviour
         TMP_Text[] rowFields = newRow.GetComponentsInChildren<TMP_Text>();
 
         rowFields[0].text = $"G{gCode}";
-        rowFields[1].text = $"{xValue:F0}";
-        rowFields[2].text = $"{yValue:F0}";
-        rowFields[3].text = $"{zValue:F0}";
-        rowFields[4].text = (gCode == 2 || gCode == 3) ? $"{rValue:F2}" : "";
-        rowFields[5].text = fValue > 0 ? $"{fValue:F0}" : "";
+        rowFields[1].text = gCode == 0 || gCode == 1 || gCode == 2 || gCode == 3 ? $"{xValue:F0}" : "";
+        rowFields[2].text = gCode == 0 || gCode == 1 || gCode == 2 || gCode == 3 ? $"{yValue:F0}" : "";
+        rowFields[3].text = gCode == 0 || gCode == 1 || gCode == 2 || gCode == 3 ? $"{zValue:F0}" : "";
+        rowFields[4].text = gCode == 2 || gCode == 3 ? $"{rValue:F2}" : "";
+        rowFields[5].text = gCode == 1 || gCode == 2 || gCode == 3 ? $"{fValue:F0}" : "";
 
         codeCollector.SendGCodeToInterpreter(trajectoryMesh);
         ClearInputs();
@@ -79,37 +79,73 @@ public class GCodeInputManager : MonoBehaviour
         xValue = yValue = zValue = rValue = fValue = 0;
 
         // Validar G
-        if (string.IsNullOrEmpty(gInput.text) || !int.TryParse(gInput.text, out gCode))
+        if (string.IsNullOrEmpty(gInput.text) || !int.TryParse(gInput.text, out gCode) || (gCode != 0 && gCode != 1 && gCode != 2 && gCode != 3))
         {
-            Debug.LogError("El comando G es obligatorio y debe ser un número válido.");
+            Debug.LogError("El comando G debe ser 0, 1, 2 o 3.");
+            warningText.text = ("El comando G debe ser 0, 1, 2 o 3.");
             return false;
         }
 
-        // Validar X, Y, Z
+        // Validar X, Y, Z (obligatorios para todos los comandos G0, G1, G2, G3)
         if (!float.TryParse(xInput.text, out xValue) ||
             !float.TryParse(yInput.text, out yValue) ||
             !float.TryParse(zInput.text, out zValue))
         {
             Debug.LogError("Los valores de X, Y y Z son obligatorios y deben ser números válidos.");
+            warningText.text = ("Los valores de X, Y y Z son obligatorios y deben ser números válidos.");
             return false;
         }
 
-        // Validar R (opcional)
-        if (!string.IsNullOrEmpty(rInput.text) && !float.TryParse(rInput.text, out rValue))
+        // Validar R y F según el comando G
+        if (gCode == 2 || gCode == 3)
         {
-            Debug.LogError("El valor de R debe ser un número válido si está presente.");
-            return false;
-        }
+            // Validar R
+            if (string.IsNullOrEmpty(rInput.text) || !float.TryParse(rInput.text, out rValue))
+            {
+                Debug.LogError("El valor de R es obligatorio para G2/G3 y debe ser un número válido.");
+                warningText.text = ("El valor de R es obligatorio para G2/G3 y debe ser un número válido.");
+                return false;
+            }
 
-        // Validar F (opcional)
-        if (!string.IsNullOrEmpty(fInput.text) && !float.TryParse(fInput.text, out fValue))
+            // Validar que R esté dentro del rango definido por RadiusRangeCalculator
+            if (rValue < rangeCalculator.minR || rValue > rangeCalculator.maxR)
+            {
+                Debug.LogError($"El valor de R debe estar entre {rangeCalculator.minR} y {rangeCalculator.maxR}.");
+                warningText.text = ($"El valor de R debe estar entre {rangeCalculator.minR} y {rangeCalculator.maxR}.");
+                return false;
+            }
+
+            // Validar F
+            if (string.IsNullOrEmpty(fInput.text) || !float.TryParse(fInput.text, out fValue))
+            {
+                Debug.LogError("El valor de F es obligatorio para G2/G3 y debe ser un número válido.");
+                warningText.text = ("El valor de F es obligatorio para G2/G3 y debe ser un número válido.");
+                return false;
+            }
+        }
+        else if (gCode == 1)
         {
-            Debug.LogError("El valor de F debe ser un número válido si está presente.");
-            return false;
+            // Validar F para G1
+            if (string.IsNullOrEmpty(fInput.text) || !float.TryParse(fInput.text, out fValue))
+            {
+                Debug.LogError("El valor de F es obligatorio para G1 y debe ser un número válido.");
+                warningText.text = ("El valor de F es obligatorio para G1 y debe ser un número válido.");
+                return false;
+            }
+        }
+        else
+        {
+            // Ignorar R y F para G0
+            if (!string.IsNullOrEmpty(fInput.text) || !string.IsNullOrEmpty(rInput.text))
+            {
+                Debug.LogWarning("Los valores de R y F se desestiman para G0.");
+                warningText.text = ("Los valores de R y F se desestiman para G0.");
+            }
         }
 
         return true;
     }
+
 
     private void ClearInputs()
     {
@@ -132,6 +168,7 @@ public class GCodeInputManager : MonoBehaviour
         else
         {
             Debug.LogWarning("No hay filas para eliminar.");
+            warningText.text = ("No hay filas para eliminar.");
         }
     }
 }

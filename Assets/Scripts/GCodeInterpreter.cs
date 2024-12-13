@@ -4,6 +4,7 @@ using UnityEngine;
 public class GCodeInterpreter : MonoBehaviour
 {
     public GameObject drawingObject;  // El objeto que se usa para el dibujo, como un LineRenderer.
+    public RadiusRangeCalculator rangeCalculator;
     private List<Vector3> currentPoints = new List<Vector3>();  // Lista de puntos actuales.
     private Vector3 lastPoint;  // Último punto conocido (necesario para G2/G3).
 
@@ -40,6 +41,7 @@ public class GCodeInterpreter : MonoBehaviour
         {
             Vector3 point = ParsePoint(line);
             AddGCodeCommand(point);
+            rangeCalculator.UpdateLastPoint(point);
             lastPoint = point;
         }
         else if (line.StartsWith("G2") || line.StartsWith("G3")) // Arco
@@ -57,6 +59,7 @@ public class GCodeInterpreter : MonoBehaviour
             }
 
             DrawArc(arcCenter, radius, startAngle, endAngle);  // Dibujar el arco
+            rangeCalculator.UpdateLastPoint(point);
             lastPoint = point;
         }
     }
@@ -131,6 +134,7 @@ public class GCodeInterpreter : MonoBehaviour
         {
             float angle = Mathf.Lerp(startAngle, endAngle, i / (float)segmentCount);
             Vector3 point = new Vector3(center.x + Mathf.Cos(angle) * radius, center.y + Mathf.Sin(angle) * radius, 0);
+            rangeCalculator.UpdateLastPoint(point);
             AddGCodeCommand(point);
         }
     }
