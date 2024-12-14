@@ -3,12 +3,12 @@ using UnityEngine;
 public class OrbitalCameraController : MonoBehaviour
 {
     [Header("Objeto de enfoque")]
-    public Transform target; // Objeto alrededor del cual la cámara orbitará
+    public Transform target; // Objeto alrededor del cual la camara orbitará
 
     [Header("Control de órbita")]
     public float rotationSpeed = 100f; // Velocidad de rotación
-    public float minYAngle = 10f; // Ángulo mínimo en el eje Y
-    public float maxYAngle = 80f; // Ángulo máximo en el eje Y
+    public float minYAngle = 10f; // Ángulo Y
+    public float maxYAngle = 80f; // Ángulo Y
 
     [Header("Control de zoom")]
     public float zoomSpeed = 10f; // Velocidad de zoom
@@ -17,12 +17,12 @@ public class OrbitalCameraController : MonoBehaviour
 
     [Header("Control de ajustes automáticos")]
     public Camera targetCamera; // Cámara que será ajustada
-    public Transform drawingBounds; // Objeto que define el área del dibujo
-    public float padding = 1.2f; // Margen adicional alrededor del dibujo
+    public Transform drawingBounds; // define el área del dibujo
+    public float padding = 1.2f; // Margen adicional
 
-    private float currentDistance; // Distancia actual de la cámara al objeto
-    private float currentYaw = 0f; // Rotación en el eje horizontal
-    private float currentPitch = 45f; // Rotación en el eje vertical
+    private float currentDistance; // Distancia de cámara
+    private float currentYaw = 0f; // Rotación horizontal
+    private float currentPitch = 45f; // Rotación vertical
 
     void Start()
     {
@@ -72,7 +72,7 @@ public class OrbitalCameraController : MonoBehaviour
     public void ToggleView()
     {
         targetCamera.orthographic = !targetCamera.orthographic;
-        AdjustCameraToFitDrawing(); // Ajustar cámara al cambiar de vista
+        AdjustCameraToFitDrawing(); // Ajustar cámara
     }
 
     public void AdjustCameraToFitDrawing()
@@ -92,7 +92,7 @@ public class OrbitalCameraController : MonoBehaviour
         if (targetCamera.orthographic)
         {
             targetCamera.orthographicSize = Mathf.Max(bounds.size.x, bounds.size.y) * padding * 0.5f;
-            currentDistance = maxZoomDistance; // Mantener una distancia máxima al usar ortográfico
+            currentDistance = maxZoomDistance; // Mantener una distancia maxima
         }
         else
         {

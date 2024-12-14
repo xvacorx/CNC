@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class GCodeInterpreter : MonoBehaviour
 {
-    public GameObject drawingObject;  // El objeto que se usa para el dibujo, como un LineRenderer.
+    public GameObject drawingObject;  // Se usa para el dibujo
     public RadiusRangeCalculator rangeCalculator;
     private List<Vector3> currentPoints = new List<Vector3>();  // Lista de puntos actuales.
     private Vector3 lastPoint;  // Último punto conocido (necesario para G2/G3).
@@ -13,7 +13,6 @@ public class GCodeInterpreter : MonoBehaviour
         // Agregar el punto a la lista de puntos
         currentPoints.Add(point);
 
-        // Si estás utilizando un LineRenderer, actualizamos el contador de puntos
         LineRenderer lineRenderer = drawingObject.GetComponent<LineRenderer>();
         lineRenderer.positionCount = currentPoints.Count;
         lineRenderer.SetPositions(currentPoints.ToArray());
@@ -21,10 +20,10 @@ public class GCodeInterpreter : MonoBehaviour
 
     public void LoadGCodeCommands(List<string> gCodeLines)
     {
-        // Limpiar cualquier dibujo previo antes de empezar a redibujar.
-        currentPoints.Clear();  // Limpiar la lista de puntos.
+        // Limpiar dibujo previo.
+        currentPoints.Clear();
 
-        // Si usas un LineRenderer, reseteamos el contador de posiciones.
+        // Reseteo de contador de posiciones.
         LineRenderer lineRenderer = drawingObject.GetComponent<LineRenderer>();
         lineRenderer.positionCount = 0;  // Eliminar líneas previas.
 
@@ -66,10 +65,10 @@ public class GCodeInterpreter : MonoBehaviour
 
     private Vector3 ParsePoint(string line)
     {
-        // Este método debe parsear las coordenadas X, Y, Z de la línea de GCode.
+        // Coordenadas X, Y, Z de la línea de GCode.
         float x = 0, y = 0, z = 0;
 
-        // Buscar las coordenadas X, Y, Z en la línea
+        // Busca las coordenadas X, Y, Z en la línea
         string[] parts = line.Split(' ');
 
         foreach (var part in parts)
@@ -96,7 +95,7 @@ public class GCodeInterpreter : MonoBehaviour
         // El centro del arco (I, J, K) se calcula a partir de la posición de los puntos de inicio y fin
         float r = 0;
 
-        // Buscar R en la línea (especificado en GCode).
+        // Busca R en la línea
         string[] parts = line.Split(' ');
         foreach (var part in parts)
         {
@@ -112,13 +111,13 @@ public class GCodeInterpreter : MonoBehaviour
             return Vector3.zero;
         }
 
-        // Cálculo del centro del arco (asumiendo un arco circular en el plano XY)
+        // Cálculo del centro del arco
         Vector3 direction = (endPoint - startPoint).normalized;
         float d = Vector3.Distance(startPoint, endPoint) / 2;
         float h = Mathf.Sqrt(r * r - d * d);  // Altura del triángulo formado
 
         // Determinar la dirección perpendicular al vector de la línea
-        Vector3 perpendicular = new Vector3(-direction.y, direction.x, 0);  // Perpendicular en 2D (XY)
+        Vector3 perpendicular = new Vector3(-direction.y, direction.x, 0); // Perpendicular en 2D (XY)
 
         // El centro del arco es el punto medio de la línea con el desplazamiento hacia la perpendicular
         Vector3 center = (startPoint + endPoint) / 2 + perpendicular * h;

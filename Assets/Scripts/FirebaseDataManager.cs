@@ -9,9 +9,9 @@ public class FirebaseDataManager : MonoBehaviour
 {
     private DatabaseReference databaseReference;
 
-    public TMP_InputField projectNameInput; // Input para el nombre del proyecto
-    public TMP_Text statusText; // TMP para mostrar los mensajes al usuario
-    public Transform tableContent; // Contenedor que tiene las filas (Rows) de la tabla
+    public TMP_InputField projectNameInput; // Input nombre del proyecto
+    public TMP_Text statusText; // TMP que muestra los mensajes al usuario
+    public Transform tableContent; // Contenedor que tiene las filas de la tabla
 
     void Start()
     {
@@ -33,7 +33,7 @@ public class FirebaseDataManager : MonoBehaviour
             return;
         }
 
-        // Verificar si ya existe un proyecto con el mismo nombre
+        // Verifica si ya existe un proyecto con el mismo nombre
         databaseReference.Child("GCodeProjects").Child(projectName).GetValueAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsCompleted)
@@ -101,15 +101,15 @@ public class FirebaseDataManager : MonoBehaviour
                 }
             }
 
-            gCodeData += line.TrimEnd() + "\\n"; // Agregar salto de línea
+            gCodeData += line.TrimEnd() + "\\n"; // Agrega salto de línea
         }
 
-        return gCodeData.TrimEnd(); // Eliminar el último salto de línea
+        return gCodeData.TrimEnd(); // Elimina el último salto de línea
     }
 
     private string ProcessField(string fieldText)
     {
-        // Extraer solo la parte numérica y redondear a un entero
+        // Extrae solo la parte numérica y redondea a un entero
         if (float.TryParse(fieldText.Substring(1), out float numericValue)) // Ignorar la primera letra (G, X, Y, Z, etc.)
         {
             return fieldText[0] + Mathf.RoundToInt(numericValue).ToString(); // Concatenar la letra con el número redondeado
