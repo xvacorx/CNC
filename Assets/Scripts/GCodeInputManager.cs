@@ -52,10 +52,11 @@ public class GCodeInputManager : MonoBehaviour
 
     public void AddGCodeRow()
     {
-        if (!ValidateInputs(out int gCode, out float xValue, out float yValue, out float zValue, out float rValue, out float fValue))
+        string invalidField = ValidateInputs(out int gCode, out float xValue, out float yValue, out float zValue, out float rValue, out float fValue);
+        if (invalidField != null)
         {
-            Debug.LogError("Uno o más valores no son válidos. Revisa los campos de entrada.");
-            warningText.text = ("Uno o más valores no son válidos. Revisa los campos de entrada.");
+            Debug.LogError($"El campo {invalidField} no es válido. Revisa los datos de entrada.");
+            warningText.text = ($"El campo {invalidField} no es válido. Revisa los datos de entrada.");
             return;
         }
 
@@ -73,7 +74,7 @@ public class GCodeInputManager : MonoBehaviour
         ClearInputs();
     }
 
-    private bool ValidateInputs(out int gCode, out float xValue, out float yValue, out float zValue, out float rValue, out float fValue)
+    private string ValidateInputs(out int gCode, out float xValue, out float yValue, out float zValue, out float rValue, out float fValue)
     {
         gCode = 0;
         xValue = yValue = zValue = rValue = fValue = 0;
@@ -81,19 +82,25 @@ public class GCodeInputManager : MonoBehaviour
         // Validar G
         if (string.IsNullOrEmpty(gInput.text) || !int.TryParse(gInput.text, out gCode) || (gCode != 0 && gCode != 1 && gCode != 2 && gCode != 3))
         {
-            Debug.LogError("El comando G debe ser 0, 1, 2 o 3.");
-            warningText.text = ("El comando G debe ser 0, 1, 2 o 3.");
-            return false;
+            warningText.text = "El comando G debe ser 0, 1, 2 o 3.";
+            return "G";
         }
 
         // Validar X, Y, Z (obligatorios para todos los comandos G0, G1, G2, G3)
-        if (!float.TryParse(xInput.text, out xValue) ||
-            !float.TryParse(yInput.text, out yValue) ||
-            !float.TryParse(zInput.text, out zValue))
+        if (!float.TryParse(xInput.text, out xValue))
         {
-            Debug.LogError("Los valores de X, Y y Z son obligatorios y deben ser números válidos.");
-            warningText.text = ("Los valores de X, Y y Z son obligatorios y deben ser números válidos.");
-            return false;
+            warningText.text = "El valor de X es obligatorio y debe ser un número válido.";
+            return "X";
+        }
+        if (!float.TryParse(yInput.text, out yValue))
+        {
+            warningText.text = "El valor de Y es obligatorio y debe ser un número válido.";
+            return "Y";
+        }
+        if (!float.TryParse(zInput.text, out zValue))
+        {
+            warningText.text = "El valor de Z es obligatorio y debe ser un número válido.";
+            return "Z";
         }
 
         // Validar R y F según el comando G
@@ -102,25 +109,22 @@ public class GCodeInputManager : MonoBehaviour
             // Validar R
             if (string.IsNullOrEmpty(rInput.text) || !float.TryParse(rInput.text, out rValue))
             {
-                Debug.LogError("El valor de R es obligatorio para G2/G3 y debe ser un número válido.");
-                warningText.text = ("El valor de R es obligatorio para G2/G3 y debe ser un número válido.");
-                return false;
+                warningText.text = "El valor de R es obligatorio para G2/G3 y debe ser un número válido.";
+                return "R";
             }
 
             // Validar que R esté dentro del rango definido por RadiusRangeCalculator
             if (rValue < rangeCalculator.minR || rValue > rangeCalculator.maxR)
             {
-                Debug.LogError($"El valor de R debe estar entre {rangeCalculator.minR} y {rangeCalculator.maxR}.");
-                warningText.text = ($"El valor de R debe estar entre {rangeCalculator.minR} y {rangeCalculator.maxR}.");
-                return false;
+                warningText.text = $"El valor de R debe estar entre {rangeCalculator.minR} y {rangeCalculator.maxR}.";
+                return "R";
             }
 
             // Validar F
             if (string.IsNullOrEmpty(fInput.text) || !float.TryParse(fInput.text, out fValue))
             {
-                Debug.LogError("El valor de F es obligatorio para G2/G3 y debe ser un número válido.");
-                warningText.text = ("El valor de F es obligatorio para G2/G3 y debe ser un número válido.");
-                return false;
+                warningText.text = "El valor de F es obligatorio para G2/G3 y debe ser un número válido.";
+                return "F";
             }
         }
         else if (gCode == 1)
@@ -128,9 +132,8 @@ public class GCodeInputManager : MonoBehaviour
             // Validar F para G1
             if (string.IsNullOrEmpty(fInput.text) || !float.TryParse(fInput.text, out fValue))
             {
-                Debug.LogError("El valor de F es obligatorio para G1 y debe ser un número válido.");
-                warningText.text = ("El valor de F es obligatorio para G1 y debe ser un número válido.");
-                return false;
+                warningText.text = "El valor de F es obligatorio para G1 y debe ser un número válido.";
+                return "F";
             }
         }
         else
@@ -138,14 +141,14 @@ public class GCodeInputManager : MonoBehaviour
             // Ignorar R y F para G0
             if (!string.IsNullOrEmpty(fInput.text) || !string.IsNullOrEmpty(rInput.text))
             {
-                Debug.LogWarning("Los valores de R y F se desestiman para G0.");
-                warningText.text = ("Los valores de R y F se desestiman para G0.");
+                warningText.text = "Los valores de R y F se desestiman para G0.";
             }
         }
 
-        return true;
+        // Todos los valores son válidos
+        warningText.text = "";
+        return null;
     }
-
 
     private void ClearInputs()
     {
@@ -153,7 +156,7 @@ public class GCodeInputManager : MonoBehaviour
         {
             field.text = "";
         }
-
+        warningText.text = "";
         inputFields[0].Select();
     }
 
