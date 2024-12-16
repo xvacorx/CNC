@@ -1,3 +1,4 @@
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -20,19 +21,21 @@ public class GCodeInterpreter : MonoBehaviour
 
     public void LoadGCodeCommands(List<string> gCodeLines)
     {
-        // Limpiar dibujo previo.
+        // Limpia completamente los puntos actuales.
         currentPoints.Clear();
 
-        // Reseteo de contador de posiciones.
+        // Reinicia el LineRenderer.
         LineRenderer lineRenderer = drawingObject.GetComponent<LineRenderer>();
-        lineRenderer.positionCount = 0;  // Eliminar líneas previas.
+        lineRenderer.positionCount = 0;
+        lineRenderer.SetPositions(new Vector3[0]); // Resetea todas las posiciones visualmente.
 
-        // Iterar por cada línea de GCode y procesarla.
+        // Procesa las nuevas líneas de GCode.
         foreach (var line in gCodeLines)
         {
             ProcessGCodeLine(line);
         }
     }
+
 
     private void ProcessGCodeLine(string line)
     {

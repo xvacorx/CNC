@@ -157,22 +157,31 @@ public class FirebaseDataManager : MonoBehaviour
             GameObject newRow = Instantiate(rowPrefab, tableContent);
             TMP_Text[] rowFields = newRow.GetComponentsInChildren<TMP_Text>();
 
+            // Asegúrate de limpiar los textos antes de asignar nuevos valores
+            for (int i = 0; i < rowFields.Length; i++)
+            {
+                rowFields[i].text = string.Empty;
+            }
+
             // Divide los valores GCode por espacio (e.g., "G1 X10 Y20 Z30")
             string[] commands = line.Split(' ');
             foreach (string command in commands)
             {
+                if (string.IsNullOrWhiteSpace(command))
+                    continue; // Si el comando está vacío, ignóralo
+
                 if (command.StartsWith("G"))
-                    rowFields[0].text = command; // G
+                    rowFields[0].text = "G" + command.Substring(1); // G
                 else if (command.StartsWith("X"))
-                    rowFields[1].text = command.Substring(1); // X
+                    rowFields[1].text = "X" + command.Substring(1); // X
                 else if (command.StartsWith("Y"))
-                    rowFields[2].text = command.Substring(1); // Y
+                    rowFields[2].text = "Y" + command.Substring(1); // Y
                 else if (command.StartsWith("Z"))
-                    rowFields[3].text = command.Substring(1); // Z
+                    rowFields[3].text = "Z" + command.Substring(1); // Z
                 else if (command.StartsWith("R"))
-                    rowFields[4].text = command.Substring(1); // R
+                    rowFields[4].text = "R" + command.Substring(1); // R
                 else if (command.StartsWith("F"))
-                    rowFields[5].text = command.Substring(1); // F
+                    rowFields[5].text = "F" + command.Substring(1); // F
             }
         }
         collector.SendGCodeToInterpreter(interpreter);

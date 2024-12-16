@@ -49,6 +49,10 @@ public class GCodeCollector : MonoBehaviour
     public void SendGCodeToInterpreter(GCodeInterpreter interpreter)
     {
         List<string> gCodeLines = CollectGCodeList(); // Genera la lista de GCode
+        foreach (var line in gCodeLines)
+        {
+            Debug.Log($"GCode Line: {line}");
+        }
         interpreter.LoadGCodeCommands(gCodeLines); // Llama al método LoadGCodeCommands del intérprete
     }
 }
