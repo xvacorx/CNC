@@ -45,7 +45,6 @@ public class FirebaseDataManager : MonoBehaviour
             return;
         }
 
-        // Recopila el GCode de la tabla
         string gCodeData = CollectGCodeList();
         if (string.IsNullOrEmpty(gCodeData))
         {
@@ -53,7 +52,7 @@ public class FirebaseDataManager : MonoBehaviour
             return;
         }
 
-        // Crea un objeto JSON para guardar en Firebase
+        // Guarda en Firebase un objeto JSON
         var projectData = new Dictionary<string, object>();
         projectData["gcode"] = gCodeData;
 
@@ -88,7 +87,6 @@ public class FirebaseDataManager : MonoBehaviour
             {
                 if (task.Result.Exists)
                 {
-                    // Extraer el GCode del resultado
                     string gCodeData = task.Result.Child("gcode").Value.ToString();
                     if (string.IsNullOrEmpty(gCodeData))
                     {
@@ -96,7 +94,6 @@ public class FirebaseDataManager : MonoBehaviour
                         return;
                     }
 
-                    // Procesar el GCode y cargarlo en la tabla de Unity
                     LoadGCodeToTable(gCodeData);
                     statusText.text = $"El proyecto '{projectName}' se cargó correctamente.";
                 }
@@ -136,28 +133,24 @@ public class FirebaseDataManager : MonoBehaviour
             }
         }
 
-        // Une todas las líneas con \n
         return string.Join("\\n", gCodeLines);
     }
 
     private void LoadGCodeToTable(string gCodeData)
     {
-        // Limpia la tabla actual
+        // Limpia la tabla
         foreach (Transform child in tableContent)
         {
             Destroy(child.gameObject);
         }
 
-        // Divide el GCode en líneas
         string[] gCodeLines = gCodeData.Split(new[] { "\\n" }, System.StringSplitOptions.None);
 
         foreach (string line in gCodeLines)
         {
-            // Crea una nueva fila en la tabla para cada línea
             GameObject newRow = Instantiate(rowPrefab, tableContent);
             TMP_Text[] rowFields = newRow.GetComponentsInChildren<TMP_Text>();
 
-            // Asegúrate de limpiar los textos antes de asignar nuevos valores
             for (int i = 0; i < rowFields.Length; i++)
             {
                 rowFields[i].text = string.Empty;
@@ -168,7 +161,7 @@ public class FirebaseDataManager : MonoBehaviour
             foreach (string command in commands)
             {
                 if (string.IsNullOrWhiteSpace(command))
-                    continue; // Si el comando está vacío, ignóralo
+                    continue;
 
                 if (command.StartsWith("G"))
                     rowFields[0].text = "G" + command.Substring(1); // G

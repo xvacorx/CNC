@@ -145,7 +145,6 @@ public class GCodeInputManager : MonoBehaviour
             }
         }
 
-        // Todos los valores son válidos
         warningText.text = "";
         return null;
     }

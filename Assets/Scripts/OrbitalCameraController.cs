@@ -3,26 +3,26 @@ using UnityEngine;
 public class OrbitalCameraController : MonoBehaviour
 {
     [Header("Objeto de enfoque")]
-    public Transform target; // Objeto alrededor del cual la camara orbitará
+    public Transform target;
 
     [Header("Control de órbita")]
-    public float rotationSpeed = 100f; // Velocidad de rotación
-    public float minYAngle = 10f; // Ángulo Y
-    public float maxYAngle = 80f; // Ángulo Y
+    public float rotationSpeed = 100f;
+    public float minYAngle = 10f;
+    public float maxYAngle = 80f;
 
     [Header("Control de zoom")]
-    public float zoomSpeed = 10f; // Velocidad de zoom
-    public float minZoomDistance = 2f; // Distancia mínima al objeto
-    public float maxZoomDistance = 20f; // Distancia máxima al objeto
+    public float zoomSpeed = 10f;
+    public float minZoomDistance = 2f;
+    public float maxZoomDistance = 20f;
 
     [Header("Control de ajustes automáticos")]
-    public Camera targetCamera; // Cámara que será ajustada
-    public Transform drawingBounds; // define el área del dibujo
-    public float padding = 1.2f; // Margen adicional
+    public Camera targetCamera;
+    public Transform drawingBounds;
+    public float padding = 1.2f;
 
-    private float currentDistance; // Distancia de cámara
-    private float currentYaw = 0f; // Rotación horizontal
-    private float currentPitch = 45f; // Rotación vertical
+    private float currentDistance;
+    private float currentYaw = 0f;
+    private float currentPitch = 45f;
 
     void Start()
     {

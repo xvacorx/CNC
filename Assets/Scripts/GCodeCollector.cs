@@ -40,7 +40,7 @@ public class GCodeCollector : MonoBehaviour
             }
         }
 
-        return gCodeLines; // Devuelve la lista de GCode procesada
+        return gCodeLines;
     }
 
     /// <summary>
@@ -48,11 +48,11 @@ public class GCodeCollector : MonoBehaviour
     /// </summary>
     public void SendGCodeToInterpreter(GCodeInterpreter interpreter)
     {
-        List<string> gCodeLines = CollectGCodeList(); // Genera la lista de GCode
+        List<string> gCodeLines = CollectGCodeList();
         foreach (var line in gCodeLines)
         {
             Debug.Log($"GCode Line: {line}");
         }
-        interpreter.LoadGCodeCommands(gCodeLines); // Llama al método LoadGCodeCommands del intérprete
+        interpreter.LoadGCodeCommands(gCodeLines);
     }
 }

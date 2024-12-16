@@ -4,14 +4,13 @@ using UnityEngine;
 
 public class GCodeInterpreter : MonoBehaviour
 {
-    public GameObject drawingObject;  // Se usa para el dibujo
+    public GameObject drawingObject;
     public RadiusRangeCalculator rangeCalculator;
-    private List<Vector3> currentPoints = new List<Vector3>();  // Lista de puntos actuales.
-    private Vector3 lastPoint;  // Último punto conocido (necesario para G2/G3).
+    private List<Vector3> currentPoints = new List<Vector3>();
+    private Vector3 lastPoint;
 
     public void AddGCodeCommand(Vector3 point)
     {
-        // Agregar el punto a la lista de puntos
         currentPoints.Add(point);
 
         LineRenderer lineRenderer = drawingObject.GetComponent<LineRenderer>();
@@ -21,15 +20,12 @@ public class GCodeInterpreter : MonoBehaviour
 
     public void LoadGCodeCommands(List<string> gCodeLines)
     {
-        // Limpia completamente los puntos actuales.
         currentPoints.Clear();
-
         // Reinicia el LineRenderer.
         LineRenderer lineRenderer = drawingObject.GetComponent<LineRenderer>();
         lineRenderer.positionCount = 0;
-        lineRenderer.SetPositions(new Vector3[0]); // Resetea todas las posiciones visualmente.
+        lineRenderer.SetPositions(new Vector3[0]);
 
-        // Procesa las nuevas líneas de GCode.
         foreach (var line in gCodeLines)
         {
             ProcessGCodeLine(line);
@@ -52,11 +48,10 @@ public class GCodeInterpreter : MonoBehaviour
             Vector3 arcCenter = CalculateArcCenter(lastPoint, point, line);  // Centro del arco
             float radius = Vector3.Distance(lastPoint, arcCenter);  // Radio calculado
 
-            // Calcular los ángulos de inicio y fin
             float startAngle = Mathf.Atan2(lastPoint.y - arcCenter.y, lastPoint.x - arcCenter.x);
             float endAngle = Mathf.Atan2(point.y - arcCenter.y, point.x - arcCenter.x);
 
-            // Ajustar los ángulos para respetar la dirección (horario o antihorario)
+            // Ajusta los ángulos para respetar la dirección (horario o antihorario)
             if (line.StartsWith("G2")) // Horario
             {
                 if (endAngle > startAngle)
@@ -105,7 +100,6 @@ public class GCodeInterpreter : MonoBehaviour
             }
         }
 
-        // Invertir Z si es necesario
         z = -z;
 
         return new Vector3(x, y, z);
@@ -136,7 +130,7 @@ public class GCodeInterpreter : MonoBehaviour
         // Cálculo del centro del arco
         Vector3 direction = (endPoint - startPoint).normalized;
         float d = Vector3.Distance(startPoint, endPoint) / 2;
-        float h = Mathf.Sqrt(r * r - d * d);  // Altura del triángulo formado
+        float h = Mathf.Sqrt(r * r - d * d);
 
         // Determinar la dirección perpendicular al vector de la línea
         Vector3 perpendicular = new Vector3(-direction.y, direction.x, 0); // Perpendicular en 2D (XY)
