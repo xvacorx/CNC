@@ -26,11 +26,11 @@ public class GCodeCollector : MonoBehaviour
 
                 string gCodeLine = $"{g}";
 
-                if (!string.IsNullOrEmpty(x)) gCodeLine += $" X{x}";
-                if (!string.IsNullOrEmpty(y)) gCodeLine += $" Y{y}";
-                if (!string.IsNullOrEmpty(z)) gCodeLine += $" Z{z}";
-                if (!string.IsNullOrEmpty(r)) gCodeLine += $" R{r}";
-                if (!string.IsNullOrEmpty(f)) gCodeLine += $" F{f}";
+                if (!string.IsNullOrEmpty(x)) gCodeLine += $" {x}";
+                if (!string.IsNullOrEmpty(y)) gCodeLine += $" {y}";
+                if (!string.IsNullOrEmpty(z)) gCodeLine += $" {z}";
+                if (!string.IsNullOrEmpty(r)) gCodeLine += $" {r}";
+                if (!string.IsNullOrEmpty(f)) gCodeLine += $" {f}";
 
                 gCodeLines.Add(gCodeLine);
             }

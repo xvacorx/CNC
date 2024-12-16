@@ -1,120 +1,180 @@
+using System;
+using System.Collections;
 using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.UI;
+using TMPro;
 using Firebase;
 using Firebase.Database;
 using Firebase.Extensions;
-using UnityEngine;
-using TMPro;
 
 public class FirebaseDataManager : MonoBehaviour
 {
-    private DatabaseReference databaseReference;
+    public TMP_InputField projectNameInput;
+    public TMP_Text statusText;
+    public Transform tableContent;
+    public GameObject rowPrefab;
 
-    public TMP_InputField projectNameInput; // Input nombre del proyecto
-    public TMP_Text statusText; // TMP que muestra los mensajes al usuario
-    public Transform tableContent; // Contenedor que tiene las filas de la tabla
+    private DatabaseReference databaseReference;
+    public GCodeCollector collector;
+    public GCodeInterpreter interpreter;
 
     void Start()
     {
+        // Inicializa Firebase
         FirebaseApp.CheckAndFixDependenciesAsync().ContinueWithOnMainThread(task =>
         {
-            FirebaseApp firebaseApp = FirebaseApp.DefaultInstance;
-            databaseReference = FirebaseDatabase.DefaultInstance.RootReference;
-            Debug.Log("Firebase inicializado correctamente.");
+            if (task.Result == DependencyStatus.Available)
+            {
+                databaseReference = FirebaseDatabase.DefaultInstance.RootReference;
+                statusText.text = "Firebase inicializado correctamente.";
+            }
+            else
+            {
+                statusText.text = "Error al inicializar Firebase: " + task.Result;
+            }
         });
     }
 
     public void UploadGCode()
     {
         string projectName = projectNameInput.text;
-
         if (string.IsNullOrEmpty(projectName))
         {
             statusText.text = "El nombre del proyecto no puede estar vacío.";
             return;
         }
 
-        // Verifica si ya existe un proyecto con el mismo nombre
+        // Recopila el GCode de la tabla
+        string gCodeData = CollectGCodeList();
+        if (string.IsNullOrEmpty(gCodeData))
+        {
+            statusText.text = "No hay datos de GCode para subir.";
+            return;
+        }
+
+        // Crea un objeto JSON para guardar en Firebase
+        var projectData = new Dictionary<string, object>();
+        projectData["gcode"] = gCodeData;
+
+        // Sube los datos a Firebase
+        databaseReference.Child("GCodeProjects").Child(projectName).SetValueAsync(projectData).ContinueWithOnMainThread(task =>
+        {
+            if (task.IsCompleted)
+            {
+                statusText.text = "Proyecto subido exitosamente.";
+            }
+            else
+            {
+                statusText.text = "Error al subir el proyecto.";
+                Debug.LogError("Error al subir el GCode: " + task.Exception);
+            }
+        });
+    }
+
+    public void DownloadGCode()
+    {
+        string projectName = projectNameInput.text;
+        if (string.IsNullOrEmpty(projectName))
+        {
+            statusText.text = "El nombre del proyecto no puede estar vacío.";
+            return;
+        }
+
+        // Descarga el proyecto de Firebase
         databaseReference.Child("GCodeProjects").Child(projectName).GetValueAsync().ContinueWithOnMainThread(task =>
         {
             if (task.IsCompleted)
             {
                 if (task.Result.Exists)
                 {
-                    statusText.text = $"El proyecto '{projectName}' ya existe.";
-                }
-                else
-                {
-                    // Recolectar el GCode de la tabla
-                    string gCodeData = GenerateGCode();
+                    // Extraer el GCode del resultado
+                    string gCodeData = task.Result.Child("gcode").Value.ToString();
                     if (string.IsNullOrEmpty(gCodeData))
                     {
-                        statusText.text = "No hay datos en la tabla para subir.";
+                        statusText.text = $"El proyecto '{projectName}' no tiene datos de GCode.";
                         return;
                     }
 
-                    // Subir el GCode a Firebase
-                    Dictionary<string, object> data = new Dictionary<string, object>
-                    {
-                        { "gcode", gCodeData }
-                    };
-
-                    databaseReference.Child("GCodeProjects").Child(projectName).SetValueAsync(data).ContinueWithOnMainThread(uploadTask =>
-                    {
-                        if (uploadTask.IsCompleted)
-                        {
-                            statusText.text = $"El proyecto '{projectName}' se subió correctamente.";
-                        }
-                        else
-                        {
-                            statusText.text = "Error al subir el proyecto.";
-                            Debug.LogError("Error al subir el GCode: " + uploadTask.Exception);
-                        }
-                    });
+                    // Procesar el GCode y cargarlo en la tabla de Unity
+                    LoadGCodeToTable(gCodeData);
+                    statusText.text = $"El proyecto '{projectName}' se cargó correctamente.";
+                }
+                else
+                {
+                    statusText.text = $"El proyecto '{projectName}' no existe.";
                 }
             }
             else
             {
-                statusText.text = "Error al verificar la existencia del proyecto.";
-                Debug.LogError("Error al verificar el proyecto: " + task.Exception);
+                statusText.text = "Error al descargar el proyecto.";
+                Debug.LogError("Error al descargar el GCode: " + task.Exception);
             }
         });
     }
 
-    private string GenerateGCode()
+    private string CollectGCodeList()
     {
-        if (tableContent.childCount == 0)
-        {
-            return null;
-        }
+        List<string> gCodeLines = new List<string>();
 
-        string gCodeData = "";
-        foreach (Transform row in tableContent)
+        foreach (Transform child in tableContent)
         {
-            TMP_Text[] rowFields = row.GetComponentsInChildren<TMP_Text>();
-            string line = "";
+            TMP_Text[] rowFields = child.GetComponentsInChildren<TMP_Text>();
 
+            string gLine = "";
             foreach (TMP_Text field in rowFields)
             {
                 if (!string.IsNullOrEmpty(field.text))
                 {
-                    line += ProcessField(field.text) + " ";
+                    gLine += field.text + " ";
                 }
             }
 
-            gCodeData += line.TrimEnd() + "\\n"; // Agrega salto de línea
+            if (!string.IsNullOrWhiteSpace(gLine))
+            {
+                gCodeLines.Add(gLine.Trim());
+            }
         }
 
-        return gCodeData.TrimEnd(); // Elimina el último salto de línea
+        // Une todas las líneas con \n
+        return string.Join("\\n", gCodeLines);
     }
 
-    private string ProcessField(string fieldText)
+    private void LoadGCodeToTable(string gCodeData)
     {
-        // Extrae solo la parte numérica y redondea a un entero
-        if (float.TryParse(fieldText.Substring(1), out float numericValue)) // Ignorar la primera letra (G, X, Y, Z, etc.)
+        // Limpia la tabla actual
+        foreach (Transform child in tableContent)
         {
-            return fieldText[0] + Mathf.RoundToInt(numericValue).ToString(); // Concatenar la letra con el número redondeado
+            Destroy(child.gameObject);
         }
 
-        return fieldText; // Si no es un número, devolver el texto original
+        // Divide el GCode en líneas
+        string[] gCodeLines = gCodeData.Split(new[] { "\\n" }, System.StringSplitOptions.None);
+
+        foreach (string line in gCodeLines)
+        {
+            // Crea una nueva fila en la tabla para cada línea
+            GameObject newRow = Instantiate(rowPrefab, tableContent);
+            TMP_Text[] rowFields = newRow.GetComponentsInChildren<TMP_Text>();
+
+            // Divide los valores GCode por espacio (e.g., "G1 X10 Y20 Z30")
+            string[] commands = line.Split(' ');
+            foreach (string command in commands)
+            {
+                if (command.StartsWith("G"))
+                    rowFields[0].text = command; // G
+                else if (command.StartsWith("X"))
+                    rowFields[1].text = command.Substring(1); // X
+                else if (command.StartsWith("Y"))
+                    rowFields[2].text = command.Substring(1); // Y
+                else if (command.StartsWith("Z"))
+                    rowFields[3].text = command.Substring(1); // Z
+                else if (command.StartsWith("R"))
+                    rowFields[4].text = command.Substring(1); // R
+                else if (command.StartsWith("F"))
+                    rowFields[5].text = command.Substring(1); // F
+            }
+        }
+        collector.SendGCodeToInterpreter(interpreter);
     }
 }

@@ -64,11 +64,11 @@ public class GCodeInputManager : MonoBehaviour
         TMP_Text[] rowFields = newRow.GetComponentsInChildren<TMP_Text>();
 
         rowFields[0].text = $"G{gCode}";
-        rowFields[1].text = gCode == 0 || gCode == 1 || gCode == 2 || gCode == 3 ? $"{xValue:F0}" : "";
-        rowFields[2].text = gCode == 0 || gCode == 1 || gCode == 2 || gCode == 3 ? $"{yValue:F0}" : "";
-        rowFields[3].text = gCode == 0 || gCode == 1 || gCode == 2 || gCode == 3 ? $"{zValue:F0}" : "";
-        rowFields[4].text = gCode == 2 || gCode == 3 ? $"{rValue:F2}" : "";
-        rowFields[5].text = gCode == 1 || gCode == 2 || gCode == 3 ? $"{fValue:F0}" : "";
+        rowFields[1].text = gCode == 0 || gCode == 1 || gCode == 2 || gCode == 3 ? $"X{xValue:F0}" : "";
+        rowFields[2].text = gCode == 0 || gCode == 1 || gCode == 2 || gCode == 3 ? $"Y{yValue:F0}" : "";
+        rowFields[3].text = gCode == 0 || gCode == 1 || gCode == 2 || gCode == 3 ? $"Z{zValue:F0}" : "";
+        rowFields[4].text = gCode == 2 || gCode == 3 ? $"R{rValue:F2}" : "";
+        rowFields[5].text = gCode == 1 || gCode == 2 || gCode == 3 ? $"F{fValue:F0}" : "";
 
         codeCollector.SendGCodeToInterpreter(trajectoryMesh);
         ClearInputs();

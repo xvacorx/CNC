@@ -45,23 +45,38 @@ public class GCodeInterpreter : MonoBehaviour
         }
         else if (line.StartsWith("G2") || line.StartsWith("G3")) // Arco
         {
-            Vector3 point = ParsePoint(line);  // Obtener el punto de destino (final)
-            Vector3 arcCenter = CalculateArcCenter(lastPoint, point, line);  // Calcular centro del arco
+            Vector3 point = ParsePoint(line);  // Punto de destino
+            Vector3 arcCenter = CalculateArcCenter(lastPoint, point, line);  // Centro del arco
             float radius = Vector3.Distance(lastPoint, arcCenter);  // Radio calculado
 
+            // Calcular los ángulos de inicio y fin
             float startAngle = Mathf.Atan2(lastPoint.y - arcCenter.y, lastPoint.x - arcCenter.x);
             float endAngle = Mathf.Atan2(point.y - arcCenter.y, point.x - arcCenter.x);
 
-            if (line.StartsWith("G3"))  // Arco en sentido antihorario
+            // Ajustar los ángulos para respetar la dirección (horario o antihorario)
+            if (line.StartsWith("G2")) // Horario
             {
-                endAngle = startAngle - (endAngle - startAngle);  // Revertir la dirección
+                if (endAngle > startAngle)
+                {
+                    endAngle -= 2 * Mathf.PI; // Asegurar que el arco sea horario
+                }
+            }
+            else if (line.StartsWith("G3")) // Antihorario
+            {
+                if (endAngle < startAngle)
+                {
+                    endAngle += 2 * Mathf.PI; // Asegurar que el arco sea antihorario
+                }
             }
 
-            DrawArc(arcCenter, radius, startAngle, endAngle);  // Dibujar el arco
+            // Dibujar el arco
+            DrawArc(arcCenter, radius, startAngle, endAngle);
             rangeCalculator.UpdateLastPoint(point);
             lastPoint = point;
         }
     }
+
+
 
     private Vector3 ParsePoint(string line)
     {
@@ -87,8 +102,12 @@ public class GCodeInterpreter : MonoBehaviour
             }
         }
 
+        // Invertir Z si es necesario
+        z = -z;
+
         return new Vector3(x, y, z);
     }
+
 
     private Vector3 CalculateArcCenter(Vector3 startPoint, Vector3 endPoint, string line)
     {
